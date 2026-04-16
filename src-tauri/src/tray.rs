@@ -5,7 +5,7 @@ use tauri::{
     AppHandle, Emitter, Manager, Wry,
 };
 
-const PROJECT_URL: &str = "https://github.com/klemperer/binglish";
+const PROJECT_URL: &str = "https://github.com/xiehuan123/binglish-v2";
 
 pub fn create_tray(app: &AppHandle) -> Result<TrayIcon, tauri::Error> {
     let menu = build_menu(app)?;
@@ -82,12 +82,12 @@ fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, tauri::Error> {
     )?)?;
 
     menu.append(&PredefinedMenuItem::separator(app)?)?;
-    menu.append(&MenuItem::with_id(app, "history", "Today in History", true, None::<&str>)?)?;
-    menu.append(&MenuItem::with_id(app, "games", "Binglish Games", true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "history", "历史上的今天", true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "games", "英语小游戏", true, None::<&str>)?)?;
 
     if let Some(ref name) = s.music_name {
         if s.music_url.is_some() {
-            menu.append(&MenuItem::with_id(app, "music_header", "==Song of the Day==", false, None::<&str>)?)?;
+            menu.append(&MenuItem::with_id(app, "music_header", "==每日推荐歌曲==", false, None::<&str>)?)?;
             menu.append(&MenuItem::with_id(app, "music_name", format!("  {name}"), false, None::<&str>)?)?;
             let play_text = if s.is_music_playing { "  停止播放" } else { "  播放歌曲" };
             menu.append(&MenuItem::with_id(app, "toggle_music", play_text, true, None::<&str>)?)?;
@@ -176,10 +176,10 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
             let _ = rebuild_tray_menu(app);
         }
         "history" => {
-            open_overlay_window(app, "history-overlay", "src/history-overlay.html", "Today in History");
+            open_overlay_window(app, "history-overlay", "src/history-overlay.html", "历史上的今天");
         }
         "games" => {
-            open_overlay_window(app, "game-overlay", "src/game-overlay.html", "Binglish Games");
+            open_overlay_window(app, "game-overlay", "src/game-overlay.html", "英语小游戏");
         }
         "toggle_music" => {
             // 直接操作 state 而不是通过 tauri command

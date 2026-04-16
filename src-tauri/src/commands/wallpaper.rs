@@ -114,13 +114,21 @@ pub async fn update_wallpaper(app: AppHandle, is_random: bool) -> Result<Wallpap
         .await
     {
         Ok(resp) => match resp.json::<serde_json::Value>().await {
-            Ok(json) => (
-                json.get("name").and_then(|v| v.as_str()).map(String::from),
-                json.get("url").and_then(|v| v.as_str()).map(String::from),
-            ),
-            Err(_) => (None, None),
+            Ok(json) => {
+                let name = json.get("name").and_then(|v| v.as_str()).map(String::from);
+                let url = json.get("url").and_then(|v| v.as_str()).map(String::from);
+                log::info!("Music info: name={:?}, url={:?}", name, url);
+                (name, url)
+            }
+            Err(e) => {
+                log::warn!("Music JSON parse failed: {e}");
+                (None, None)
+            }
         },
-        Err(_) => (None, None),
+        Err(e) => {
+            log::warn!("Music JSON fetch failed: {e}");
+            (None, None)
+        }
     };
 
     // 设置壁纸
