@@ -1,0 +1,16 @@
+{
+  "identifier": "binglish-default",
+  "description": "Capability for the main window",
+  "windows": ["main", "rest-overlay", "history-overlay", "game-overlay"],
+  "permissions": [
+    "core:default",
+    "core:window:default",
+    "core:window:allow-create",
+    "core:window:allow-close",
+    "core:window:allow-set-focus",
+    "shell:allow-open",
+    "dialog:default",
+    "store:default",
+    "autostart:default"
+  ]
+}

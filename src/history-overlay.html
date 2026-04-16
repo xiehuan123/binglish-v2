@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Today in History</title>
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/history.css" />
+</head>
+<body>
+  <div class="overlay history-overlay visible">
+    <button class="exit-btn" id="exitBtn">Exit (Esc)</button>
+    <div class="history-header">
+      <div class="title">Today in History</div>
+      <div class="date" id="dateText"></div>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="loading">Loading...</div>
+    </div>
+  </div>
+  <script type="module" src="scripts/history-overlay.ts"></script>
+</body>
+</html>

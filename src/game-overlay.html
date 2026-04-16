@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Binglish Games</title>
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/games.css" />
+</head>
+<body>
+  <div class="overlay game-overlay visible">
+    <button class="exit-btn" id="exitBtn">Exit Game (Esc)</button>
+    <div id="lobby" class="lobby">
+      <div class="title">Binglish Games</div>
+      <div class="subtitle">请选择一个单词游戏开始挑战：</div>
+      <div style="margin-top:30px">
+        <button class="game-btn" id="btnShuffle">Sentence Master</button>
+        <button class="game-btn" id="btnWordle">Wordle</button>
+      </div>
+    </div>
+    <div id="gameArea" style="display:none"></div>
+    <div class="game-hud" id="gameHud" style="display:none">
+      <span id="timerText">Time: 00:00</span>
+      <span class="attempts" id="attemptsText"></span>
+    </div>
+    <div class="result-msg" id="resultMsg"></div>
+  </div>
+  <script type="module" src="scripts/game-lobby.ts"></script>
+</body>
+</html>

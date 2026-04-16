@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Binglish</title>
+</head>
+<body>
+  <script type="module">
+    import { listen } from "@tauri-apps/api/event";
+    // 监听托盘发来的播放单词音频事件
+    listen("play-word-audio", (event) => {
+      const audio = new Audio(event.payload);
+      audio.play().catch(console.error);
+    });
+  </script>
+</body>
+</html>

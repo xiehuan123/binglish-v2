@@ -1,0 +1,276 @@
+.game-overlay {
+  background: #2C3E50;
+}
+
+/* Lobby */
+.lobby {
+  text-align: center;
+}
+
+.lobby .game-btn {
+  display: inline-block;
+  background: #34495E;
+  color: #ECF0F1;
+  border: 2px solid #5D6D7E;
+  padding: 20px 40px;
+  font-size: 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  margin: 0 15px;
+  transition: all 0.2s;
+  font-family: "Microsoft YaHei", sans-serif;
+}
+
+.lobby .game-btn:hover {
+  border-color: #F1C40F;
+  background: #3D566E;
+  transform: translateY(-2px);
+}
+
+/* Timer & Attempts */
+.game-hud {
+  position: fixed;
+  top: 20px;
+  right: 80px;
+  display: flex;
+  gap: 30px;
+  z-index: 50;
+}
+
+.game-hud span {
+  font-size: 22px;
+  font-weight: bold;
+  color: #BDC3C7;
+}
+
+.game-hud .attempts {
+  color: #F1C40F;
+}
+
+/* Sentence Master */
+.sentence-master {
+  text-align: center;
+}
+
+.slots-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 20px 0;
+  max-width: 900px;
+}
+
+.slot-btn {
+  background: transparent;
+  color: #5D6D7E;
+  border: 2px dashed #5D6D7E;
+  padding: 8px 16px;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  min-width: 60px;
+  transition: all 0.2s;
+  font-family: "Helvetica", sans-serif;
+}
+
+.slot-btn.filled {
+  color: white;
+  border-style: solid;
+  border-color: transparent;
+}
+
+.slot-btn.correct {
+  background: #27AE60;
+}
+
+.slot-btn.wrong {
+  background: #2C3E50;
+  border-color: #E74C3C;
+}
+
+.slot-btn.locked {
+  cursor: default;
+}
+
+.punctuation {
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+  display: flex;
+  align-items: center;
+  padding: 0 2px;
+}
+
+.pool-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  max-width: 900px;
+}
+
+.pool-btn {
+  background: #ECF0F1;
+  color: #2C3E50;
+  border: none;
+  padding: 8px 18px;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: "Helvetica", sans-serif;
+}
+
+.pool-btn:hover {
+  background: #F1C40F;
+  color: #2C3E50;
+  transform: scale(1.05);
+}
+
+.result-msg {
+  position: fixed;
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  font-weight: bold;
+  z-index: 50;
+}
+
+.result-msg.success {
+  color: #2ECC71;
+}
+
+.translation {
+  color: #BDC3C7;
+  font-size: 14px;
+  margin-top: 20px;
+  font-family: "Microsoft YaHei", sans-serif;
+}
+
+/* Wordle */
+.wordle-container {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.wordle-rules {
+  width: 300px;
+  text-align: left;
+}
+
+.wordle-rules h2 {
+  font-size: 24px;
+  color: #F1C40F;
+  margin-bottom: 12px;
+}
+
+.wordle-rules p {
+  font-size: 13px;
+  color: #BDC3C7;
+  line-height: 1.8;
+  font-family: "Microsoft YaHei", sans-serif;
+}
+
+.wordle-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.wordle-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 56px);
+  gap: 6px;
+}
+
+.wordle-cell {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: bold;
+  color: white;
+  border: 2px solid #5D6D7E;
+  border-radius: 4px;
+  text-transform: uppercase;
+  transition: all 0.3s;
+}
+
+.wordle-cell.correct {
+  background: #27AE60;
+  border-color: #27AE60;
+}
+
+.wordle-cell.present {
+  background: #F39C12;
+  border-color: #F39C12;
+}
+
+.wordle-cell.absent {
+  background: #5D6D7E;
+  border-color: #5D6D7E;
+}
+
+.wordle-cell.active {
+  border-color: #BDC3C7;
+}
+
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.keyboard-row {
+  display: flex;
+  gap: 4px;
+}
+
+.key {
+  min-width: 36px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #BDC3C7;
+  color: #2C3E50;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+
+.key.wide {
+  min-width: 60px;
+  font-size: 12px;
+}
+
+.key:hover {
+  background: #ECF0F1;
+}
+
+.key.correct {
+  background: #27AE60;
+  color: white;
+}
+
+.key.present {
+  background: #F39C12;
+  color: white;
+}
+
+.key.absent {
+  background: #5D6D7E;
+  color: white;
+}

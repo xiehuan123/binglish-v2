@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>休息提醒</title>
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/rest.css" />
+</head>
+<body>
+  <div class="overlay rest-overlay" id="restOverlay">
+    <div class="rest-quote">
+      <div class="en" id="quoteEn"></div>
+      <div class="cn" id="quoteCn"></div>
+    </div>
+    <div class="countdown-container">
+      <div class="countdown-text" id="countdown"></div>
+      <button class="unlock-btn" id="unlockBtn" disabled>请等待...</button>
+    </div>
+    <div class="quiz-section" id="quizSection" style="display:none"></div>
+    <div class="fact-section" id="factSection" style="display:none">
+      <div class="label">Did you know?</div>
+      <div class="en" id="factEn"></div>
+      <div class="cn" id="factCn"></div>
+    </div>
+  </div>
+  <script type="module" src="scripts/rest-overlay.ts"></script>
+</body>
+</html>
