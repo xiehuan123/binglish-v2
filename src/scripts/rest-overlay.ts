@@ -1,5 +1,5 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { restCompleted, getUselessFact, getWallpaperInfo } from "./shared/invoke";
+import { restCompleted, getCurrentWord } from "./shared/invoke";
 
 const REST_LOCK_SECONDS = 30;
 
@@ -41,7 +41,6 @@ const REST_QUOTES: [string, string][] = [
   ["A 5-minute break saves 5 hours of debugging.", "休息5分钟，省下5小时改 Bug。"],
   ["Esc key is not just on the keyboard.", "Esc 键不只在键盘上。"],
   ["The internet will survive without you for 5 minutes.", "没你这5分钟，互联网也不会崩。"],
-  ["Touch grass. Literally.", "去摸摸草。字面意思。"],
   ["Disconnect to reconnect.", "断开连接，为了更好地连接。"],
   ["Screen time is up. Real time begins.", "屏幕时间到。现实时间开始。"],
 ];
@@ -51,23 +50,19 @@ let countdown = REST_LOCK_SECONDS;
 let quizShown = false;
 
 async function init() {
-  // 随机选一条语录
   const [en, cn] = REST_QUOTES[Math.floor(Math.random() * REST_QUOTES.length)];
   document.getElementById("quoteEn")!.textContent = en;
   document.getElementById("quoteCn")!.textContent = cn;
 
-  // 淡入
   requestAnimationFrame(() => {
     document.getElementById("restOverlay")!.classList.add("visible");
   });
 
-  // 倒计时
   updateCountdown();
   const timer = setInterval(() => {
     countdown--;
     updateCountdown();
 
-    // 半程时显示单词测验
     if (countdown <= Math.floor(REST_LOCK_SECONDS / 2) && !quizShown) {
       quizShown = true;
       showWordQuiz();
@@ -82,17 +77,6 @@ async function init() {
     }
   }, 1000);
 
-  // 异步获取冷知识
-  try {
-    const fact = await getUselessFact();
-    if (fact.en) {
-      document.getElementById("factEn")!.textContent = fact.en;
-      document.getElementById("factCn")!.textContent = fact.cn;
-      document.getElementById("factSection")!.style.display = "block";
-    }
-  } catch { /* ignore */ }
-
-  // 解锁按钮
   document.getElementById("unlockBtn")!.addEventListener("click", async () => {
     if (countdown > 0) return;
     await restCompleted();
@@ -111,14 +95,12 @@ function updateCountdown() {
 
 async function showWordQuiz() {
   try {
-    const info = await getWallpaperInfo() as { word: string | null };
-    if (!info.word) return;
+    const word = await getCurrentWord();
+    if (!word) return;
 
-    const word = info.word;
     const section = document.getElementById("quizSection")!;
     section.style.display = "block";
 
-    // 简单测验：打乱字母让用户识别
     const shuffled = word.split("").sort(() => Math.random() - 0.5).join("");
     section.innerHTML = `
       <div class="question">What word is this? <strong>${shuffled}</strong></div>
@@ -129,13 +111,11 @@ async function showWordQuiz() {
       </div>
     `;
 
-    // 随机排列按钮
     const container = section.querySelector(".options")!;
     const buttons = Array.from(container.children) as HTMLElement[];
     buttons.sort(() => Math.random() - 0.5);
     buttons.forEach((b) => container.appendChild(b));
 
-    // 点击事件
     container.addEventListener("click", (e) => {
       const btn = (e.target as HTMLElement).closest(".option-btn") as HTMLElement;
       if (!btn) return;

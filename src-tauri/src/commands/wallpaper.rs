@@ -1,73 +1,10 @@
-use crate::state::AppState;
+use crate::state::{AppState, WallpaperMode};
 use crate::wallpaper_setter;
-use serde::Serialize;
-use std::io::Cursor;
+use crate::word_db::WordDb;
+use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
-const IMAGE_URL: &str = "https://ss.blueforge.org/bing";
-const MUSIC_JSON_URL: &str = "https://ss.blueforge.org/bing/songoftheday.json";
-const VERSION: &str = "2.0.1";
-
-#[derive(Debug, Serialize, Clone)]
-pub struct WallpaperInfo {
-    pub word: Option<String>,
-    pub url: Option<String>,
-    pub mp3: Option<String>,
-    pub copyright: Option<String>,
-    pub copyright_url: Option<String>,
-    pub id: Option<String>,
-    pub music_name: Option<String>,
-    pub music_url: Option<String>,
-}
-
-fn parse_exif(data: &[u8]) -> (Option<String>, Option<String>, Option<String>, Option<String>, Option<String>, Option<String>) {
-    let cursor = Cursor::new(data);
-    let exif = match exif::Reader::new().read_from_container(&mut std::io::BufReader::new(cursor)) {
-        Ok(e) => e,
-        Err(e) => {
-            log::warn!("EXIF parse failed: {e}");
-            return (None, None, None, None, None, None);
-        }
-    };
-
-    let get_field = |tag: exif::Tag| -> Option<String> {
-        exif.get_field(tag, exif::In::PRIMARY).and_then(|f| match &f.value {
-            exif::Value::Ascii(v) if !v.is_empty() => {
-                String::from_utf8(v[0].clone()).ok().map(|s| s.trim().to_string())
-            }
-            _ => None,
-        }).filter(|s| !s.is_empty())
-    };
-
-    let word = get_field(exif::Tag::Artist);
-    let url = get_field(exif::Tag::ImageDescription);
-    let mp3 = get_field(exif::Tag(exif::Context::Tiff, 269));
-    let id = get_field(exif::Tag::Software);
-
-    let copyright_raw = get_field(exif::Tag::Copyright);
-    let (copyright, copyright_url) = match copyright_raw {
-        Some(raw) if raw.contains("||") => {
-            let mut parts = raw.splitn(2, "||");
-            let c = parts.next().map(|s| s.trim().to_string());
-            let u = parts.next().map(|s| s.trim().to_string());
-            (c, u)
-        }
-        other => (other, None),
-    };
-
-    (word, url, mp3, copyright, copyright_url, id)
-}
-
-#[tauri::command]
-pub async fn update_wallpaper(app: AppHandle, is_random: bool) -> Result<WallpaperInfo, String> {
-    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
-    std::fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
-    let save_path = data_dir.join("wallpaper.jpg");
-
-    // 构建下载 URL
-    let mut image_url = format!("{IMAGE_URL}?v={VERSION}");
-
-    // 获取屏幕尺寸（通过前端传入或使用默认值）
+fn get_screen_size() -> (u32, u32) {
     #[cfg(target_os = "windows")]
     {
         use windows::Win32::Graphics::Gdi::{
@@ -78,105 +15,157 @@ pub async fn update_wallpaper(app: AppHandle, is_random: bool) -> Result<Wallpap
             let w = GetDeviceCaps(dc, DESKTOPHORZRES);
             let h = GetDeviceCaps(dc, DESKTOPVERTRES);
             let _ = ReleaseDC(None, dc);
-            image_url.push_str(&format!("&w={w}&h={h}"));
+            (w as u32, h as u32)
         }
     }
-
-    if is_random {
-        image_url.push_str("&random");
-    }
-
-    log::info!("Downloading wallpaper from: {image_url}");
-
-    // 下载壁纸
-    let client = reqwest::Client::new();
-    let img_bytes = client
-        .get(&image_url)
-        .timeout(std::time::Duration::from_secs(20))
-        .send()
-        .await
-        .map_err(|e| format!("Download failed: {e}"))?
-        .bytes()
-        .await
-        .map_err(|e| format!("Read body failed: {e}"))?;
-
-    std::fs::write(&save_path, &img_bytes).map_err(|e| format!("Save failed: {e}"))?;
-    log::info!("Wallpaper saved to: {}", save_path.display());
-
-    // 解析 EXIF
-    let (word, url, mp3, copyright, copyright_url, id) = parse_exif(&img_bytes);
-
-    // 下载音乐信息
-    let (music_name, music_url) = match client
-        .get(MUSIC_JSON_URL)
-        .timeout(std::time::Duration::from_secs(10))
-        .send()
-        .await
+    #[cfg(not(target_os = "windows"))]
     {
-        Ok(resp) => match resp.json::<serde_json::Value>().await {
-            Ok(json) => {
-                let name = json.get("name").and_then(|v| v.as_str()).map(String::from);
-                let url = json.get("url").and_then(|v| v.as_str()).map(String::from);
-                log::info!("Music info: name={:?}, url={:?}", name, url);
-                (name, url)
-            }
-            Err(e) => {
-                log::warn!("Music JSON parse failed: {e}");
-                (None, None)
-            }
-        },
-        Err(e) => {
-            log::warn!("Music JSON fetch failed: {e}");
-            (None, None)
+        (2560, 1600)
+    }
+}
+
+fn remove_files_with_prefix(dir: &std::path::Path, prefix: &str) {
+    for entry in std::fs::read_dir(dir).into_iter().flatten().flatten() {
+        if entry.file_name().to_string_lossy().starts_with(prefix) {
+            let _ = std::fs::remove_file(entry.path());
         }
+    }
+}
+
+async fn download_bing_wallpaper(w: u32, h: u32) -> Result<Vec<u8>, String> {
+    use rand::Rng;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("HTTP client error: {e}"))?;
+
+    let idx = rand::thread_rng().gen_range(0..8);
+
+    // 源1: picsum.photos
+    let source1 = format!("https://picsum.photos/{w}/{h}");
+    log::info!("Trying picsum.photos: {source1}");
+    if let Ok(bytes) = download_image(&client, &source1).await {
+        return Ok(bytes);
+    }
+
+    // 源2: Bing 官方 API（随机最近 8 天）
+    let bing_api = format!(
+        "https://www.bing.com/HPImageArchive.aspx?format=js&idx={idx}&n=1&mkt=zh-CN"
+    );
+    if let Ok(url) = try_bing_official(&client, &bing_api, w, h).await {
+        log::info!("Trying Bing official (idx={idx}): {url}");
+        if let Ok(bytes) = download_image(&client, &url).await {
+            return Ok(bytes);
+        }
+    }
+
+    // 源3: bingw.jasonzeng.dev
+    let source3 = format!("https://bingw.jasonzeng.dev/?index=random&w={w}&h={h}");
+    log::info!("Trying bingw.jasonzeng.dev");
+    if let Ok(bytes) = download_image(&client, &source3).await {
+        return Ok(bytes);
+    }
+
+    // 源4: bing.img.run
+    log::info!("Trying bing.img.run");
+    if let Ok(bytes) = download_image(&client, "https://bing.img.run/1920x1080.php").await {
+        return Ok(bytes);
+    }
+
+    // 源5: Bing 直链
+    log::info!("Trying Bing direct OHR");
+    if let Ok(bytes) = download_image(&client, "https://www.bing.com/th?id=OHR.POTD_zhCN&w=1920&h=1080&c=7&rs=1&qlt=80").await {
+        return Ok(bytes);
+    }
+
+    Err("All wallpaper sources failed".to_string())
+}
+
+async fn try_bing_official(client: &reqwest::Client, api_url: &str, w: u32, h: u32) -> Result<String, String> {
+    let resp = client.get(api_url).send().await.map_err(|e| e.to_string())?;
+    let json: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+    let base = json.pointer("/images/0/url")
+        .and_then(|v| v.as_str())
+        .ok_or("No image URL in Bing API response")?;
+    let url = if base.starts_with("http") {
+        base.to_string()
+    } else {
+        format!("https://www.bing.com{base}")
     };
+    let url = url.replace("1920x1080", &format!("{w}x{h}"));
+    Ok(url)
+}
 
-    // 设置壁纸
-    wallpaper_setter::set_wallpaper(&save_path)?;
-    log::info!("Wallpaper set successfully");
-
-    // 更新共享状态
-    let state: AppState = app.state::<AppState>().inner().clone();
-    {
-        let mut s = state.lock();
-        s.bing_word = word.clone();
-        s.bing_url = url.clone();
-        s.bing_mp3 = mp3.clone();
-        s.bing_copyright = copyright.clone();
-        s.bing_copyright_url = copyright_url.clone();
-        s.bing_id = id.clone();
-        s.music_name = music_name.clone();
-        s.music_url = music_url.clone();
+async fn download_image(client: &reqwest::Client, url: &str) -> Result<Vec<u8>, String> {
+    let resp = client.get(url).send().await.map_err(|e| format!("Download failed: {e}"))?;
+    if !resp.status().is_success() {
+        return Err(format!("HTTP {}", resp.status()));
     }
-
-    // 触发托盘菜单重建
-    let _ = crate::tray::rebuild_tray_menu(&app);
-
-    Ok(WallpaperInfo {
-        word,
-        url,
-        mp3,
-        copyright,
-        copyright_url,
-        id,
-        music_name,
-        music_url,
-    })
+    let bytes = resp.bytes().await.map_err(|e| format!("Read failed: {e}"))?;
+    if bytes.len() < 10000 {
+        return Err("Image too small, likely not a valid image".to_string());
+    }
+    Ok(bytes.to_vec())
 }
 
 #[tauri::command]
-pub fn get_wallpaper_info(state: tauri::State<'_, AppState>) -> WallpaperInfo {
-    let s = state.inner().lock();
-    WallpaperInfo {
-        word: s.bing_word.clone(),
-        url: s.bing_url.clone(),
-        mp3: s.bing_mp3.clone(),
-        copyright: s.bing_copyright.clone(),
-        copyright_url: s.bing_copyright_url.clone(),
-        id: s.bing_id.clone(),
-        music_name: s.music_name.clone(),
-        music_url: s.music_url.clone(),
+pub async fn update_wallpaper(app: AppHandle) -> Result<String, String> {
+    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
+    let save_path = data_dir.join("wallpaper.jpg");
+    let (screen_w, screen_h) = get_screen_size();
+
+    let state: AppState = app.state::<AppState>().inner().clone();
+    let (mode, custom_path) = {
+        let s = state.lock();
+        (s.wallpaper_mode.clone(), s.custom_image_path.clone())
+    };
+
+    let base_path = match mode {
+        WallpaperMode::Custom => {
+            match custom_path {
+                Some(p) if std::path::Path::new(&p).exists() => PathBuf::from(p),
+                _ => return Err("Custom image not found".to_string()),
+            }
+        }
+        WallpaperMode::Normal => {
+            let bing_path = data_dir.join("bing_base.jpg");
+            let bytes = download_bing_wallpaper(screen_w, screen_h).await?;
+            std::fs::write(&bing_path, &bytes).map_err(|e| format!("Save failed: {e}"))?;
+            log::info!("Wallpaper downloaded: {}KB", bytes.len() / 1024);
+            bing_path
+        }
+    };
+
+    let word_db: tauri::State<'_, WordDb> = app.state();
+    let entry = word_db.random_word().ok_or("Word database is empty")?;
+    log::info!("Selected word: {} [{}]", entry.word, entry.phonetic);
+
+    let desc = if entry.phonetic.is_empty() {
+        entry.trans.clone()
+    } else {
+        format!("/{}/ {}", entry.phonetic, entry.trans)
+    };
+
+    let card = crate::text_renderer::WordCard {
+        word: entry.word.clone(),
+        desc: if desc.is_empty() { None } else { Some(desc) },
+        sentence_en: if entry.sentence_en.is_empty() { None } else { Some(entry.sentence_en.clone()) },
+        sentence_cn: if entry.sentence_cn.is_empty() { None } else { Some(entry.sentence_cn.clone()) },
+    };
+
+    crate::text_renderer::render_word_on_image(&base_path, &card, &save_path, screen_w, screen_h)?;
+
+    wallpaper_setter::set_wallpaper(&save_path)?;
+    log::info!("Wallpaper set: {}", entry.word);
+
+    {
+        let mut s = state.lock();
+        s.current_word = Some(entry.word.clone());
     }
+
+    let _ = crate::tray::rebuild_tray_menu(&app);
+    Ok(entry.word.clone())
 }
 
 #[tauri::command]
@@ -188,4 +177,66 @@ pub fn copy_wallpaper(app: AppHandle, dest: String) -> Result<(), String> {
     }
     std::fs::copy(&src, &dest).map_err(|e| format!("Copy failed: {e}"))?;
     Ok(())
+}
+
+pub fn save_wallpaper_config(app: &AppHandle) -> Result<(), String> {
+    use tauri_plugin_store::StoreExt;
+    let state: AppState = app.state::<AppState>().inner().clone();
+    let (mode, path) = {
+        let s = state.lock();
+        (s.wallpaper_mode.clone(), s.custom_image_path.clone())
+    };
+    let store = app.store("config.json").map_err(|e| e.to_string())?;
+    store.set("wallpaper_mode", serde_json::to_value(&mode).unwrap());
+    store.set("custom_image_path", serde_json::to_value(&path).unwrap());
+    store.save().map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn set_custom_wallpaper(app: AppHandle, image_path: String) -> Result<(), String> {
+    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
+
+    let src = std::path::Path::new(&image_path);
+    let ext = src.extension().and_then(|e| e.to_str()).unwrap_or("jpg");
+    let custom_base = data_dir.join(format!("custom_base.{ext}"));
+
+    remove_files_with_prefix(&data_dir, "custom_base.");
+
+    std::fs::copy(&image_path, &custom_base).map_err(|e| format!("Copy image failed: {e}"))?;
+    log::info!("Custom wallpaper copied from: {image_path}");
+
+    {
+        let state: AppState = app.state::<AppState>().inner().clone();
+        let mut s = state.lock();
+        s.wallpaper_mode = WallpaperMode::Custom;
+        s.custom_image_path = Some(custom_base.to_string_lossy().to_string());
+    }
+
+    save_wallpaper_config(&app)?;
+    update_wallpaper(app).await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn clear_custom_wallpaper(app: AppHandle) -> Result<(), String> {
+    let data_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+
+    {
+        let state: AppState = app.state::<AppState>().inner().clone();
+        let mut s = state.lock();
+        s.wallpaper_mode = WallpaperMode::Normal;
+        s.custom_image_path = None;
+    }
+
+    remove_files_with_prefix(&data_dir, "custom_base.");
+    save_wallpaper_config(&app)?;
+    update_wallpaper(app).await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_current_word(state: tauri::State<'_, AppState>) -> Option<String> {
+    state.inner().lock().current_word.clone()
 }

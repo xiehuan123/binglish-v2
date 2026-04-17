@@ -1,21 +1,24 @@
 use parking_lot::Mutex;
+use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Instant;
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum WallpaperMode {
+    Normal,
+    Custom,
+}
+
+impl Default for WallpaperMode {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
 pub struct AppStateInner {
-    // 壁纸数据
-    pub bing_word: Option<String>,
-    pub bing_url: Option<String>,
-    pub bing_mp3: Option<String>,
-    pub bing_copyright: Option<String>,
-    pub bing_copyright_url: Option<String>,
-    pub bing_id: Option<String>,
-    // 音乐
-    pub music_name: Option<String>,
-    pub music_url: Option<String>,
-    pub is_music_playing: bool,
-    /// 发送 () 到此 channel 可停止当前播放
-    pub music_stop_tx: Option<std::sync::mpsc::Sender<()>>,
+    // 当前单词
+    pub current_word: Option<String>,
     // 休息提醒
     pub is_rest_enabled: bool,
     pub last_activity_time: Instant,
@@ -25,21 +28,15 @@ pub struct AppStateInner {
     pub idle_reset_seconds: u64,
     pub rest_lock_seconds: u64,
     pub overlay_color: String,
+    // 壁纸模式
+    pub wallpaper_mode: WallpaperMode,
+    pub custom_image_path: Option<String>,
 }
 
 impl Default for AppStateInner {
     fn default() -> Self {
         Self {
-            bing_word: None,
-            bing_url: None,
-            bing_mp3: None,
-            bing_copyright: None,
-            bing_copyright_url: None,
-            bing_id: None,
-            music_name: None,
-            music_url: None,
-            is_music_playing: false,
-            music_stop_tx: None,
+            current_word: None,
             is_rest_enabled: false,
             last_activity_time: Instant::now(),
             last_rest_time: Instant::now(),
@@ -48,6 +45,8 @@ impl Default for AppStateInner {
             idle_reset_seconds: 300,
             rest_lock_seconds: 30,
             overlay_color: "#2C3E50".to_string(),
+            wallpaper_mode: WallpaperMode::default(),
+            custom_image_path: None,
         }
     }
 }

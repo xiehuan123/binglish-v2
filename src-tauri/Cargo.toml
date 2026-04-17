@@ -30,6 +30,9 @@ parking_lot = "0.12"
 log = "0.4"
 env_logger = "0.11"
 rand = "0.8"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+imageproc = "0.25"
+ab_glyph = "0.2"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.58", features = [

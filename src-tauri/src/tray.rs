@@ -1,4 +1,5 @@
-use crate::state::AppState;
+use crate::state::{AppState, WallpaperMode};
+use std::path::PathBuf;
 use tauri::{
     menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem},
     tray::{TrayIcon, TrayIconBuilder},
@@ -38,35 +39,23 @@ fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, tauri::Error> {
 
     let menu = Menu::new(app)?;
 
-    if let Some(ref word) = s.bing_word {
-        if s.bing_url.is_some() {
-            menu.append(&MenuItem::with_id(
-                app, "lookup_word",
-                format!("查单词 {word}"), true, None::<&str>,
-            )?)?;
-        }
-        if s.bing_mp3.is_some() {
-            menu.append(&MenuItem::with_id(
-                app, "listen_word",
-                format!("听单词 {word}"), true, None::<&str>,
-            )?)?;
-        }
+    if let Some(ref word) = s.current_word {
         menu.append(&MenuItem::with_id(
-            app, "watch_word",
-            format!("看单词 {word}"), true, None::<&str>,
+            app, "current_word",
+            format!("当前单词: {word}"), false, None::<&str>,
         )?)?;
         menu.append(&PredefinedMenuItem::separator(app)?)?;
     }
 
-    menu.append(&MenuItem::with_id(app, "random_review", "随机复习", true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "next_word", "换个单词", true, None::<&str>)?)?;
     menu.append(&MenuItem::with_id(app, "copy_save", "复制保存", true, None::<&str>)?)?;
 
-    if s.bing_copyright.is_some() {
-        menu.append(&MenuItem::with_id(app, "wallpaper_info", "壁纸信息", true, None::<&str>)?)?;
-    }
-    if s.bing_id.is_some() {
-        menu.append(&MenuItem::with_id(app, "share_wallpaper", "分享壁纸", true, None::<&str>)?)?;
-    }
+    let custom_label = if s.wallpaper_mode == WallpaperMode::Custom {
+        "取消自定义壁纸"
+    } else {
+        "自定义壁纸"
+    };
+    menu.append(&MenuItem::with_id(app, "custom_wallpaper", custom_label, true, None::<&str>)?)?;
 
     menu.append(&PredefinedMenuItem::separator(app)?)?;
 
@@ -82,19 +71,9 @@ fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, tauri::Error> {
     )?)?;
 
     menu.append(&PredefinedMenuItem::separator(app)?)?;
-    menu.append(&MenuItem::with_id(app, "history", "历史上的今天", true, None::<&str>)?)?;
     menu.append(&MenuItem::with_id(app, "games", "英语小游戏", true, None::<&str>)?)?;
 
-    if let Some(ref name) = s.music_name {
-        if s.music_url.is_some() {
-            menu.append(&MenuItem::with_id(app, "music_header", "==每日推荐歌曲==", false, None::<&str>)?)?;
-            menu.append(&MenuItem::with_id(app, "music_name", format!("  {name}"), false, None::<&str>)?)?;
-            let play_text = if s.is_music_playing { "  停止播放" } else { "  播放歌曲" };
-            menu.append(&MenuItem::with_id(app, "toggle_music", play_text, true, None::<&str>)?)?;
-            menu.append(&PredefinedMenuItem::separator(app)?)?;
-        }
-    }
-
+    menu.append(&PredefinedMenuItem::separator(app)?)?;
     menu.append(&CheckMenuItem::with_id(app, "autostart", "开机运行", true, false, None::<&str>)?)?;
     menu.append(&MenuItem::with_id(app, "about", "关于", true, None::<&str>)?)?;
     menu.append(&MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?)?;
@@ -105,28 +84,12 @@ fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, tauri::Error> {
 fn handle_menu_event(app: &AppHandle, id: &str) {
     let state = get_state(app);
     match id {
-        "lookup_word" => {
-            if let Some(ref url) = state.lock().bing_url {
-                let _ = tauri_plugin_shell::ShellExt::shell(app).open(url, None);
-            }
-        }
-        "listen_word" => {
-            let mp3 = state.lock().bing_mp3.clone();
-            if let Some(mp3_url) = mp3 {
-                crate::commands::audio::play_word_audio(&mp3_url);
-            }
-        }
-        "watch_word" => {
-            let word = state.lock().bing_word.clone();
-            if let Some(word) = word {
-                let url = format!("https://www.playphrase.me/#/search?q={word}&language=en");
-                let _ = tauri_plugin_shell::ShellExt::shell(app).open(&url, None);
-            }
-        }
-        "random_review" => {
+        "next_word" => {
             let app = app.clone();
             tauri::async_runtime::spawn(async move {
-                let _ = crate::commands::wallpaper::update_wallpaper(app, true).await;
+                if let Err(e) = crate::commands::wallpaper::update_wallpaper(app).await {
+                    log::error!("Update wallpaper failed: {e}");
+                }
             });
         }
         "copy_save" => {
@@ -141,29 +104,6 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                 }
             });
         }
-        "wallpaper_info" => {
-            let (copyright, copyright_url) = {
-                let s = state.lock();
-                (s.bing_copyright.clone().unwrap_or_default(), s.bing_copyright_url.clone())
-            };
-            use tauri_plugin_dialog::DialogExt;
-            if let Some(url) = copyright_url {
-                let app_clone = app.clone();
-                app.dialog()
-                    .message(&format!("{copyright}\n\n查看相关信息？"))
-                    .title("壁纸信息")
-                    .blocking_show();
-                let _ = tauri_plugin_shell::ShellExt::shell(&app_clone).open(&url, None);
-            } else {
-                app.dialog()
-                    .message(&copyright)
-                    .title("壁纸信息")
-                    .blocking_show();
-            }
-        }
-        "share_wallpaper" => {
-            open_overlay_window(app, "game-overlay", "src/game-overlay.html", "分享壁纸");
-        }
         "toggle_rest" => {
             {
                 let mut s = state.lock();
@@ -175,16 +115,39 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
             }
             let _ = rebuild_tray_menu(app);
         }
-        "history" => {
-            open_overlay_window(app, "history-overlay", "src/history-overlay.html", "历史上的今天");
-        }
         "games" => {
             open_overlay_window(app, "game-overlay", "src/game-overlay.html", "英语小游戏");
         }
-        "toggle_music" => {
-            // 直接操作 state 而不是通过 tauri command
-            let _ = crate::commands::audio::toggle_music_inner(&state);
-            let _ = rebuild_tray_menu(app);
+        "custom_wallpaper" => {
+            let app = app.clone();
+            tauri::async_runtime::spawn(async move {
+                let state = get_state(&app);
+                let mode = state.lock().wallpaper_mode.clone();
+                if mode == WallpaperMode::Custom {
+                    if let Err(e) = crate::commands::wallpaper::clear_custom_wallpaper(app.clone()).await {
+                        log::error!("Clear custom wallpaper failed: {e}");
+                    }
+                } else {
+                    use tauri_plugin_dialog::DialogExt;
+                    let file = app
+                        .dialog()
+                        .file()
+                        .add_filter("Images", &["jpg", "jpeg", "png", "bmp"])
+                        .blocking_pick_file();
+                    if let Some(f) = file {
+                        match PathBuf::try_from(f) {
+                            Ok(path) => {
+                                let path_str = path.to_string_lossy().to_string();
+                                if let Err(e) = crate::commands::wallpaper::set_custom_wallpaper(app.clone(), path_str).await {
+                                    log::error!("Set custom wallpaper failed: {e}");
+                                }
+                            }
+                            Err(e) => log::error!("Invalid file path: {e}"),
+                        }
+                    }
+                }
+                let _ = rebuild_tray_menu(&app);
+            });
         }
         "about" => {
             use tauri_plugin_dialog::DialogExt;
