@@ -83,15 +83,18 @@ body {
 }
 
 .word-list {
-  flex: 1;
+  width: 294px;
   overflow-y: auto;
-  padding: 6px 0;
+  padding: 6px 14px;
 }
 
 .word-item {
-  padding: 10px 18px;
+  padding: 7px 0;
+  /* height: 80px; */
+  width: 100%;
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   transition: background 0.15s;
+  cursor: pointer;
 }
 
 .word-item:last-child {
@@ -100,6 +103,10 @@ body {
 
 .word-item:hover {
   background: rgba(255, 255, 255, 0.04);
+}
+
+.word-item:active {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .word-top {
@@ -125,7 +132,5 @@ body {
   color: rgba(255, 255, 255, 0.45);
   font-size: 13px;
   line-height: 1.4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
 }

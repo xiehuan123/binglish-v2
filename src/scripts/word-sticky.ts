@@ -47,14 +47,31 @@ async function loadPage(page: number) {
   const list = document.getElementById("wordList")!;
   list.innerHTML = data.words.map(w => {
     const ph = w.phonetic ? `/${w.phonetic}/` : "";
-    return `<div class="word-item">
+    const trans = w.trans.split(";").slice(0, 3).join("; ");
+    return `<div class="word-item" data-word="${w.word}">
       <div class="word-top">
         <span class="word-name">${w.word}</span>
         <span class="word-phonetic">${ph}</span>
       </div>
-      <div class="word-trans">${w.trans}</div>
+      <div class="word-trans">${trans}</div>
     </div>`;
   }).join("");
+
+  list.querySelectorAll(".word-item").forEach(item => {
+    item.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const word = (item as HTMLElement).dataset.word;
+      if (word) playWord(word);
+    });
+  });
+}
+
+let currentAudio: HTMLAudioElement | null = null;
+
+function playWord(word: string) {
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
+  currentAudio = new Audio(`https://dict.youdao.com/dictvoice?type=2&audio=${encodeURIComponent(word)}`);
+  currentAudio.play().catch(() => {});
 }
 
 document.getElementById("prevBtn")!.addEventListener("click", (e) => {

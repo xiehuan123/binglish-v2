@@ -16,12 +16,12 @@
         "label": "main",
         "title": "Binglish-v2",
         "width": 800,
-        "height": 600,
+        "height": 500,
         "visible": false
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' https://ss.blueforge.org https://*.bing.com https://*.bing.net; media-src 'self' https:; img-src 'self' https: data:; script-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self'; connect-src 'self' https://ss.blueforge.org https://*.bing.com https://*.bing.net https://dict.youdao.com; media-src 'self' https: https://dict.youdao.com; img-src 'self' https: data:; script-src 'self' 'unsafe-inline'"
     }
   },
   "bundle": {

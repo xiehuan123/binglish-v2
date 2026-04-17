@@ -269,6 +269,26 @@ pub fn get_word_page(word_db: tauri::State<'_, WordDb>, page: usize, page_size: 
         let trans_short: String = e.trans
             .split(';')
             .take(2)
+            .map(|s| {
+                // 去掉括号内的详细解释
+                let mut result = String::new();
+                let mut depth = 0i32;
+                for ch in s.trim().chars() {
+                    match ch {
+                        '（' | '(' => depth += 1,
+                        '）' | ')' => { depth -= 1; continue; }
+                        _ if depth > 0 => continue,
+                        _ => result.push(ch),
+                    }
+                }
+                // 中文逗号分隔的子义项只取前2个
+                let parts: Vec<&str> = result.split('，').collect();
+                if parts.len() > 2 {
+                    parts[..2].join("，")
+                } else {
+                    result
+                }
+            })
             .collect::<Vec<_>>()
             .join("; ");
         WordPageItem {

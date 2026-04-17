@@ -135,7 +135,7 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                     tauri::WebviewUrl::App("src/word-sticky.html".into()),
                 )
                 .title("单词便签")
-                .inner_size(360.0, 460.0)
+                .inner_size(360.0, 520.0)
                 .decorations(false)
                 .always_on_top(true)
                 .skip_taskbar(true)
