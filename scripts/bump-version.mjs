@@ -3,6 +3,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+import { createInterface } from 'readline';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -20,6 +21,12 @@ const c = {
   cyan: s => `\x1b[36m${s}\x1b[0m`,
   dim: s => `\x1b[2m${s}\x1b[0m`,
 };
+
+// ── 交互输入 ─────────────────────────────────────────
+function ask(question) {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise(resolve => rl.question(question, ans => { rl.close(); resolve(ans.trim()); }));
+}
 
 // ── 代理配置（从环境变量读取，默认 127.0.0.1:7890）────
 function buildEnv() {
@@ -89,11 +96,13 @@ try {
 // ── 3. Git 提交 + tag + 推送 ─────────────────────────
 try {
   console.log(c.cyan('\n🚀 提交并推送 ...'));
+  const desc = await ask(c.yellow(`\n📝 请输入 ${tag} 的版本描述: `));
+  if (!desc) { console.error(c.red('描述不能为空')); rollbackVersion(); process.exit(1); }
   run(`git add ${versionFiles.join(' ')}`);
-  run(`git commit -m "release: ${tag}"`);
-  run(`git tag ${tag}`);
-  run('git push');
-  run(`git push origin ${tag}`);
+  run(`git commit -m "release: ${tag} - ${desc}"`);
+  run(`git tag -a ${tag} -m "${desc}"`);
+  run('git push', { proxy: true });
+  run(`git push origin ${tag}`, { proxy: true });
 } catch {
   console.error(c.red('\n✗ Git 操作失败，清理中 ...'));
   try { run(`git tag -d ${tag}`, { silent: true }); } catch { /* ignore */ }
