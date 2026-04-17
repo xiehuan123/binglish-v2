@@ -115,6 +115,11 @@ pub async fn update_wallpaper(app: AppHandle) -> Result<String, String> {
     let save_path = data_dir.join("wallpaper.jpg");
     let (screen_w, screen_h) = get_screen_size();
 
+    // 先从词库选词（在 await 之前完成，避免生命周期问题）
+    let word_db: tauri::State<'_, WordDb> = app.state();
+    let entry = word_db.random_word().ok_or("Word database is empty")?.clone();
+    drop(word_db);
+
     let state: AppState = app.state::<AppState>().inner().clone();
     let (mode, custom_path) = {
         let s = state.lock();
@@ -137,8 +142,6 @@ pub async fn update_wallpaper(app: AppHandle) -> Result<String, String> {
         }
     };
 
-    let word_db: tauri::State<'_, WordDb> = app.state();
-    let entry = word_db.random_word().ok_or("Word database is empty")?;
     log::info!("Selected word: {} [{}]", entry.word, entry.phonetic);
 
     let desc = if entry.phonetic.is_empty() {

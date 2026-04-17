@@ -122,8 +122,10 @@ pub fn render_word_on_image(
     screen_width: u32,
     screen_height: u32,
 ) -> Result<(), String> {
-    let img = image::open(base_image_path)
-        .map_err(|e| format!("Failed to open base image: {e}"))?;
+    let raw = std::fs::read(base_image_path)
+        .map_err(|e| format!("Failed to read base image: {e}"))?;
+    let img = image::load_from_memory(&raw)
+        .map_err(|e| format!("Failed to decode base image: {e}"))?;
     let mut canvas = resize_cover(img, screen_width, screen_height);
 
     let fonts = get_fonts();
