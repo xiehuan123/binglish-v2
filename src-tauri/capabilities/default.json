@@ -1,13 +1,14 @@
 {
   "identifier": "binglish-default",
   "description": "Capability for the main window",
-  "windows": ["main", "rest-overlay", "history-overlay", "game-overlay"],
+  "windows": ["main", "rest-overlay", "history-overlay", "game-overlay", "word-sticky"],
   "permissions": [
     "core:default",
     "core:window:default",
     "core:window:allow-create",
     "core:window:allow-close",
     "core:window:allow-set-focus",
+    "core:window:allow-start-dragging",
     "shell:allow-open",
     "dialog:default",
     "store:default",

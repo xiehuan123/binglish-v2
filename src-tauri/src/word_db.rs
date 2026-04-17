@@ -33,4 +33,17 @@ impl WordDb {
         let mut rng = rand::thread_rng();
         self.words.choose(&mut rng)
     }
+
+    pub fn get_page(&self, page: usize, page_size: usize) -> Vec<WordEntry> {
+        let start = page * page_size;
+        if start >= self.words.len() {
+            return Vec::new();
+        }
+        let end = (start + page_size).min(self.words.len());
+        self.words[start..end].to_vec()
+    }
+
+    pub fn total_words(&self) -> usize {
+        self.words.len()
+    }
 }

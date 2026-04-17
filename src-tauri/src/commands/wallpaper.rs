@@ -243,3 +243,39 @@ pub async fn clear_custom_wallpaper(app: AppHandle) -> Result<(), String> {
 pub fn get_current_word(state: tauri::State<'_, AppState>) -> Option<String> {
     state.inner().lock().current_word.clone()
 }
+
+#[derive(serde::Serialize)]
+pub struct WordPage {
+    pub words: Vec<WordPageItem>,
+    pub current_page: usize,
+    pub total_pages: usize,
+}
+
+#[derive(serde::Serialize)]
+pub struct WordPageItem {
+    pub word: String,
+    pub phonetic: String,
+    pub trans: String,
+}
+
+#[tauri::command]
+pub fn get_word_page(word_db: tauri::State<'_, WordDb>, page: usize, page_size: usize) -> WordPage {
+    let size = if page_size == 0 { 5 } else { page_size };
+    let total = word_db.total_words();
+    let total_pages = (total + size - 1) / size;
+    let p = page.min(total_pages.saturating_sub(1));
+    let entries = word_db.get_page(p, size);
+    let words = entries.into_iter().map(|e| {
+        let trans_short: String = e.trans
+            .split(';')
+            .take(2)
+            .collect::<Vec<_>>()
+            .join("; ");
+        WordPageItem {
+            word: e.word,
+            phonetic: e.phonetic,
+            trans: trans_short,
+        }
+    }).collect();
+    WordPage { words, current_page: p, total_pages }
+}

@@ -34,6 +34,7 @@ pub fn run() {
             commands::wallpaper::set_custom_wallpaper,
             commands::wallpaper::clear_custom_wallpaper,
             commands::wallpaper::get_current_word,
+            commands::wallpaper::get_word_page,
             commands::games::get_game_data,
             commands::system::is_fullscreen,
             scheduler::rest_completed,

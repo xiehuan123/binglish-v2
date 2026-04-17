@@ -73,6 +73,11 @@ fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, tauri::Error> {
     menu.append(&PredefinedMenuItem::separator(app)?)?;
     menu.append(&MenuItem::with_id(app, "games", "英语小游戏", true, None::<&str>)?)?;
 
+    let sticky_open = app.get_webview_window("word-sticky").is_some();
+    menu.append(&CheckMenuItem::with_id(
+        app, "word_sticky", "单词便签", true, sticky_open, None::<&str>,
+    )?)?;
+
     menu.append(&PredefinedMenuItem::separator(app)?)?;
     menu.append(&CheckMenuItem::with_id(app, "autostart", "开机运行", true, false, None::<&str>)?)?;
     menu.append(&MenuItem::with_id(app, "about", "关于", true, None::<&str>)?)?;
@@ -117,6 +122,35 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
         }
         "games" => {
             open_overlay_window(app, "game-overlay", "src/game-overlay.html", "英语小游戏");
+        }
+        "word_sticky" => {
+            if let Some(win) = app.get_webview_window("word-sticky") {
+                let _ = win.close();
+                let _ = rebuild_tray_menu(app);
+            } else {
+                let app_clone = app.clone();
+                if let Ok(win) = tauri::WebviewWindowBuilder::new(
+                    app,
+                    "word-sticky",
+                    tauri::WebviewUrl::App("src/word-sticky.html".into()),
+                )
+                .title("单词便签")
+                .inner_size(360.0, 460.0)
+                .decorations(false)
+                .always_on_top(true)
+                .skip_taskbar(true)
+                .transparent(true)
+                .resizable(false)
+                .build() {
+                    let app_for_close = app_clone.clone();
+                    win.on_window_event(move |event| {
+                        if let tauri::WindowEvent::Destroyed = event {
+                            let _ = rebuild_tray_menu(&app_for_close);
+                        }
+                    });
+                }
+                let _ = rebuild_tray_menu(&app_clone);
+            }
         }
         "custom_wallpaper" => {
             let app = app.clone();

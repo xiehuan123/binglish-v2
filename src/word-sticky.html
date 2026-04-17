@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>单词便签</title>
+  <link rel="stylesheet" href="styles/sticky.css" />
+</head>
+<body>
+  <div class="sticky-container" data-tauri-drag-region>
+    <div class="sticky-header" data-tauri-drag-region>
+      <button class="nav-btn" id="prevBtn">◀</button>
+      <span class="page-info" id="pageInfo">1 / 1</span>
+      <button class="nav-btn" id="nextBtn">▶</button>
+      <button class="close-btn" id="closeBtn">✕</button>
+    </div>
+    <div class="word-list" id="wordList"></div>
+  </div>
+  <script type="module" src="scripts/word-sticky.ts"></script>
+</body>
+</html>

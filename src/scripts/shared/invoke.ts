@@ -19,3 +19,7 @@ export async function restCompleted() {
 export async function isFullscreen() {
   return invoke<boolean>("is_fullscreen");
 }
+
+export async function getWordPage(page: number, pageSize: number) {
+  return invoke<{ words: { word: string; phonetic: string; trans: string }[]; current_page: number; total_pages: number }>("get_word_page", { page, pageSize });
+}
