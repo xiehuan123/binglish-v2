@@ -2,7 +2,7 @@ use crate::state::AppState;
 use tauri::{
     menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem},
     tray::{TrayIcon, TrayIconBuilder},
-    AppHandle, Emitter, Manager, Wry,
+    AppHandle, Manager, Wry,
 };
 
 const PROJECT_URL: &str = "https://github.com/xiehuan123/binglish-v2";
@@ -10,7 +10,7 @@ const PROJECT_URL: &str = "https://github.com/xiehuan123/binglish-v2";
 pub fn create_tray(app: &AppHandle) -> Result<TrayIcon, tauri::Error> {
     let menu = build_menu(app)?;
     let icon = app.default_window_icon().cloned().expect("no app icon found");
-    TrayIconBuilder::new()
+    TrayIconBuilder::with_id("main")
         .icon(icon)
         .menu(&menu)
         .tooltip("Binglish")
@@ -113,7 +113,7 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
         "listen_word" => {
             let mp3 = state.lock().bing_mp3.clone();
             if let Some(mp3_url) = mp3 {
-                let _ = app.emit("play-word-audio", mp3_url);
+                crate::commands::audio::play_word_audio(&mp3_url);
             }
         }
         "watch_word" => {

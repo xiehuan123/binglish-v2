@@ -6,7 +6,7 @@ use tauri::{AppHandle, Manager};
 
 const IMAGE_URL: &str = "https://ss.blueforge.org/bing";
 const MUSIC_JSON_URL: &str = "https://ss.blueforge.org/bing/songoftheday.json";
-const VERSION: &str = "2.0.0";
+const VERSION: &str = "2.0.1";
 
 #[derive(Debug, Serialize, Clone)]
 pub struct WallpaperInfo {
@@ -31,17 +31,17 @@ fn parse_exif(data: &[u8]) -> (Option<String>, Option<String>, Option<String>, O
     };
 
     let get_field = |tag: exif::Tag| -> Option<String> {
-        exif.get_field(tag, exif::In::PRIMARY)
-            .map(|f| f.display_value().to_string().trim().to_string())
-            .filter(|s| !s.is_empty())
+        exif.get_field(tag, exif::In::PRIMARY).and_then(|f| match &f.value {
+            exif::Value::Ascii(v) if !v.is_empty() => {
+                String::from_utf8(v[0].clone()).ok().map(|s| s.trim().to_string())
+            }
+            _ => None,
+        }).filter(|s| !s.is_empty())
     };
 
     let word = get_field(exif::Tag::Artist);
     let url = get_field(exif::Tag::ImageDescription);
-    // DocumentName 在 kamadak-exif 中不直接暴露，使用 XPTitle 或自定义 tag
-    let mp3 = exif.get_field(exif::Tag(exif::Context::Tiff, 269), exif::In::PRIMARY)
-        .map(|f| f.display_value().to_string().trim().to_string())
-        .filter(|s| !s.is_empty());
+    let mp3 = get_field(exif::Tag(exif::Context::Tiff, 269));
     let id = get_field(exif::Tag::Software);
 
     let copyright_raw = get_field(exif::Tag::Copyright);
