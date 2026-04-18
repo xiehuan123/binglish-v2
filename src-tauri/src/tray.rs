@@ -139,7 +139,6 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                 .decorations(false)
                 .always_on_top(true)
                 .skip_taskbar(true)
-                .transparent(true)
                 .resizable(false)
                 .build() {
                     let app_for_close = app_clone.clone();

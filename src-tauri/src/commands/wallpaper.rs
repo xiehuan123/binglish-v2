@@ -18,8 +18,35 @@ fn get_screen_size() -> (u32, u32) {
             (w as u32, h as u32)
         }
     }
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
     {
+        use std::ffi::c_void;
+        extern "C" {
+            fn CGGetActiveDisplayList(max: u32, displays: *mut u32, count: *mut u32) -> i32;
+            fn CGDisplayCopyDisplayMode(display: u32) -> *const c_void;
+            fn CGDisplayModeGetPixelWidth(mode: *const c_void) -> usize;
+            fn CGDisplayModeGetPixelHeight(mode: *const c_void) -> usize;
+            fn CGDisplayModeRelease(mode: *const c_void);
+        }
+        unsafe {
+            let mut ids = [0u32; 16];
+            let mut count = 0u32;
+            CGGetActiveDisplayList(16, ids.as_mut_ptr(), &mut count);
+            let mut max_w = 0u32;
+            let mut max_h = 0u32;
+            for i in 0..count as usize {
+                let mode = CGDisplayCopyDisplayMode(ids[i]);
+                if !mode.is_null() {
+                    let w = CGDisplayModeGetPixelWidth(mode) as u32;
+                    let h = CGDisplayModeGetPixelHeight(mode) as u32;
+                    CGDisplayModeRelease(mode);
+                    max_w = max_w.max(w);
+                    max_h = max_h.max(h);
+                }
+            }
+            log::info!("Screen size (max of {} displays): {max_w}x{max_h}", count);
+            if max_w > 0 && max_h > 0 { return (max_w, max_h); }
+        }
         (2560, 1600)
     }
 }
@@ -33,52 +60,18 @@ fn remove_files_with_prefix(dir: &std::path::Path, prefix: &str) {
 }
 
 async fn download_bing_wallpaper(w: u32, h: u32) -> Result<Vec<u8>, String> {
-    use rand::Rng;
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(15))
+        .no_gzip()
+        .no_brotli()
+        .no_deflate()
+        .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 
-    let idx = rand::thread_rng().gen_range(0..8);
-
-    // 源1: picsum.photos
-    let source1 = format!("https://picsum.photos/{w}/{h}");
-    log::info!("Trying picsum.photos: {source1}");
-    if let Ok(bytes) = download_image(&client, &source1).await {
-        return Ok(bytes);
-    }
-
-    // 源2: Bing 官方 API（随机最近 8 天）
-    let bing_api = format!(
-        "https://www.bing.com/HPImageArchive.aspx?format=js&idx={idx}&n=1&mkt=zh-CN"
-    );
-    if let Ok(url) = try_bing_official(&client, &bing_api, w, h).await {
-        log::info!("Trying Bing official (idx={idx}): {url}");
-        if let Ok(bytes) = download_image(&client, &url).await {
-            return Ok(bytes);
-        }
-    }
-
-    // 源3: bingw.jasonzeng.dev
-    let source3 = format!("https://bingw.jasonzeng.dev/?index=random&w={w}&h={h}");
-    log::info!("Trying bingw.jasonzeng.dev");
-    if let Ok(bytes) = download_image(&client, &source3).await {
-        return Ok(bytes);
-    }
-
-    // 源4: bing.img.run
-    log::info!("Trying bing.img.run");
-    if let Ok(bytes) = download_image(&client, "https://bing.img.run/1920x1080.php").await {
-        return Ok(bytes);
-    }
-
-    // 源5: Bing 直链
-    log::info!("Trying Bing direct OHR");
-    if let Ok(bytes) = download_image(&client, "https://www.bing.com/th?id=OHR.POTD_zhCN&w=1920&h=1080&c=7&rs=1&qlt=80").await {
-        return Ok(bytes);
-    }
-
-    Err("All wallpaper sources failed".to_string())
+    let url = format!("https://picsum.photos/1920/1080");
+    log::info!("Downloading wallpaper: {url}");
+    download_image(&client, &url).await
 }
 
 async fn try_bing_official(client: &reqwest::Client, api_url: &str, w: u32, h: u32) -> Result<String, String> {
