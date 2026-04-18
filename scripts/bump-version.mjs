@@ -111,4 +111,40 @@ try {
   process.exit(1);
 }
 
+// ── 4. 创建 GitHub Release 并上传构建产物 ────────────
+try {
+  console.log(c.cyan('\n📤 创建 GitHub Release ...'));
+  const bundleDir = resolve(root, 'src-tauri/target/release/bundle');
+  const assets = [];
+
+  // macOS: .dmg
+  const dmgDir = resolve(bundleDir, 'dmg');
+  try {
+    const dmgFiles = execSync(`ls "${dmgDir}"/*.dmg 2>/dev/null`, { encoding: 'utf-8' }).trim().split('\n').filter(Boolean);
+    assets.push(...dmgFiles);
+  } catch { /* no dmg */ }
+
+  // Windows: .msi / .exe (NSIS)
+  for (const sub of ['msi', 'nsis']) {
+    const dir = resolve(bundleDir, sub);
+    try {
+      const files = execSync(`ls "${dir}"/*.msi "${dir}"/*.exe 2>/dev/null`, { encoding: 'utf-8' }).trim().split('\n').filter(Boolean);
+      assets.push(...files);
+    } catch { /* no windows artifacts */ }
+  }
+
+  if (assets.length === 0) {
+    console.log(c.yellow('  ⚠ 未找到构建产物，仅创建 Release（不含附件）'));
+  } else {
+    console.log(`  找到 ${assets.length} 个构建产物:`);
+    assets.forEach(a => console.log(c.dim(`    ${a}`)));
+  }
+
+  const assetArgs = assets.map(a => `"${a}"`).join(' ');
+  run(`gh release create ${tag} --title "${tag} - ${desc}" --notes "${desc}" ${assetArgs}`, { proxy: true });
+} catch (e) {
+  console.error(c.yellow(`\n⚠ GitHub Release 创建失败（tag 和代码已推送成功）`));
+  console.error(c.dim(`  可手动执行: gh release create ${tag} --title "${tag}" src-tauri/target/release/bundle/dmg/*.dmg`));
+}
+
 console.log(c.green(`\n✓ 发布完成: ${tag}\n`));
