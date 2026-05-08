@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学习单词</title>
+  <link rel="stylesheet" href="styles/review.css" />
+</head>
+<body>
+  <div class="review-container" data-tauri-drag-region>
+    <div class="review-header" data-tauri-drag-region>
+      <span class="review-title" id="headerTitle">今日学习</span>
+      <button class="close-btn" id="closeBtn">✕</button>
+    </div>
+
+    <!-- View: Home -->
+    <div class="view" id="viewHome">
+      <div class="home-stats">
+        <div class="stat-row">
+          <span class="stat-label">今日新词</span>
+          <span class="stat-value" id="homeNewCount">0/20</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">待复习</span>
+          <span class="stat-value" id="homeDueCount">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">已掌握</span>
+          <span class="stat-value" id="homeMastered">0</span>
+        </div>
+      </div>
+      <div class="home-actions">
+        <button class="btn-primary" id="btnStart">开始学习</button>
+      </div>
+      <div class="home-config">
+        <div class="config-row">
+          <label>词库</label>
+          <select id="selectBook"></select>
+        </div>
+        <div class="config-row">
+          <label>每日新词</label>
+          <select id="selectLimit">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20" selected>20</option>
+            <option value="30">30</option>
+            <option value="50">50</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- View: Card (unified for new + review) -->
+    <div class="view hidden" id="viewCard">
+      <div class="card-progress" id="cardProgress">1/20</div>
+      <div class="card-area">
+        <div class="word-main" id="cardWord"></div>
+        <div class="word-phonetic" id="cardPhonetic"></div>
+        <div class="answer-reveal hidden" id="answerReveal">
+          <div class="word-trans" id="cardTrans"></div>
+          <div class="word-sentence" id="cardSentence"></div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn-show" id="btnShowAnswer">显示释义</button>
+        <div class="btn-group hidden" id="resultBtns">
+          <button class="btn-forgot" id="btnForgot">不认得</button>
+          <button class="btn-fuzzy" id="btnFuzzy">不确定</button>
+          <button class="btn-remembered" id="btnRemembered">认得</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- View: Done -->
+    <div class="view hidden" id="viewDone">
+      <div class="done-icon">🎉</div>
+      <div class="done-text" id="doneText">学习完成!</div>
+      <div class="done-stats" id="doneStats"></div>
+      <button class="btn-primary" id="btnBackHome">返回</button>
+    </div>
+  </div>
+  <script type="module" src="scripts/review-session.ts"></script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 use crate::state::{AppState, WallpaperMode};
+use crate::review_store::ReviewStore;
 use std::path::PathBuf;
 use tauri::{
     menu::{CheckMenuItem, Menu, MenuItem, PredefinedMenuItem},
@@ -48,6 +49,8 @@ fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, tauri::Error> {
     }
 
     menu.append(&MenuItem::with_id(app, "next_word", "换个单词", true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "read_word", "朗读单词", true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "learn_current", "学习当前单词", true, None::<&str>)?)?;
     menu.append(&MenuItem::with_id(app, "copy_save", "复制保存", true, None::<&str>)?)?;
 
     let custom_label = if s.wallpaper_mode == WallpaperMode::Custom {
@@ -56,6 +59,20 @@ fn build_menu(app: &AppHandle) -> Result<Menu<Wry>, tauri::Error> {
         "自定义壁纸"
     };
     menu.append(&MenuItem::with_id(app, "custom_wallpaper", custom_label, true, None::<&str>)?)?;
+
+    menu.append(&PredefinedMenuItem::separator(app)?)?;
+
+    // 学习相关
+    let due_count = app.try_state::<ReviewStore>()
+        .map(|store| store.lock().get_due_count())
+        .unwrap_or(0);
+    let review_label = if due_count > 0 {
+        format!("开始学习 ({due_count}待复习)")
+    } else {
+        "开始学习".to_string()
+    };
+    menu.append(&MenuItem::with_id(app, "review", &review_label, true, None::<&str>)?)?;
+    menu.append(&MenuItem::with_id(app, "stats", "学习统计", true, None::<&str>)?)?;
 
     menu.append(&PredefinedMenuItem::separator(app)?)?;
 
@@ -96,6 +113,28 @@ fn handle_menu_event(app: &AppHandle, id: &str) {
                     log::error!("Update wallpaper failed: {e}");
                 }
             });
+        }
+        "read_word" => {
+            let word = state.lock().current_word.clone();
+            if let Some(w) = word {
+                let url = format!("https://dict.youdao.com/dictvoice?type=2&audio={}", w);
+                crate::commands::audio::play_word_audio(&url);
+            }
+        }
+        "learn_current" => {
+            let word = state.lock().current_word.clone();
+            if let Some(w) = word {
+                if let Some(store) = app.try_state::<ReviewStore>() {
+                    store.lock().add_word(w);
+                    let _ = rebuild_tray_menu(app);
+                }
+            }
+        }
+        "review" => {
+            open_floating_window(app, "review-overlay", "src/review-overlay.html", "复习单词");
+        }
+        "stats" => {
+            open_floating_window(app, "stats-overlay", "src/stats-overlay.html", "学习统计");
         }
         "copy_save" => {
             let app_clone = app.clone();
@@ -206,5 +245,20 @@ fn open_overlay_window(app: &AppHandle, label: &str, url: &str, title: &str) {
         .fullscreen(true)
         .decorations(false)
         .always_on_top(true)
+        .build();
+}
+
+fn open_floating_window(app: &AppHandle, label: &str, url: &str, title: &str) {
+    if let Some(win) = app.get_webview_window(label) {
+        let _ = win.set_focus();
+        return;
+    }
+    let _ = tauri::WebviewWindowBuilder::new(app, label, tauri::WebviewUrl::App(url.into()))
+        .title(title)
+        .inner_size(360.0, 520.0)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true)
+        .resizable(false)
         .build();
 }

@@ -1,5 +1,6 @@
 use crate::state::AppState;
 use crate::idle_detector;
+use crate::review_store::ReviewStore;
 use crate::commands::system::is_fullscreen;
 use tauri::{AppHandle, Manager};
 use std::time::Duration;
@@ -116,4 +117,17 @@ pub fn rest_completed(state: tauri::State<'_, AppState>) {
     s.is_overlay_showing = false;
     s.last_rest_time = std::time::Instant::now();
     s.last_activity_time = std::time::Instant::now();
+}
+
+pub fn spawn_review_reminder(app: AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        loop {
+            tokio::time::sleep(Duration::from_secs(300)).await;
+            let store: ReviewStore = app.state::<ReviewStore>().inner().clone();
+            let due = store.lock().get_due_count();
+            if due > 0 {
+                let _ = crate::tray::rebuild_tray_menu(&app);
+            }
+        }
+    });
 }

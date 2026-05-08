@@ -1,6 +1,6 @@
 [package]
 name = "binglish-v2"
-version = "2.0.0"
+version = "4.0.0"
 description = "AI Desktop English Learning App"
 authors = ["klemperer"]
 edition = "2021"

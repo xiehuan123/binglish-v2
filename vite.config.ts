@@ -19,6 +19,8 @@ export default defineConfig(async () => ({
         history: "src/history-overlay.html",
         game: "src/game-overlay.html",
         sticky: "src/word-sticky.html",
+        review: "src/review-overlay.html",
+        stats: "src/stats-overlay.html",
       },
     },
   },

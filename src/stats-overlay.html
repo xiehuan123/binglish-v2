@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学习统计</title>
+  <link rel="stylesheet" href="styles/stats.css" />
+</head>
+<body>
+  <div class="stats-container" data-tauri-drag-region>
+    <div class="stats-header" data-tauri-drag-region>
+      <span class="stats-title">学习统计</span>
+      <button class="close-btn" id="closeBtn">✕</button>
+    </div>
+    <div class="stats-content">
+      <div class="stats-overview">
+        <div class="overview-ring">
+          <svg viewBox="0 0 100 100" class="ring-svg">
+            <circle cx="50" cy="50" r="42" class="ring-bg" />
+            <circle cx="50" cy="50" r="42" class="ring-progress" id="ringProgress" />
+          </svg>
+          <div class="ring-center">
+            <div class="ring-value" id="masteredCount">0</div>
+            <div class="ring-label">已掌握</div>
+          </div>
+        </div>
+        <div class="overview-details">
+          <div class="detail-item">
+            <span class="detail-value" id="totalWords">0</span>
+            <span class="detail-label">总学习</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-value" id="inProgress">0</span>
+            <span class="detail-label">进行中</span>
+          </div>
+          <div class="detail-item">
+            <span class="detail-value accent" id="dueToday">0</span>
+            <span class="detail-label">待复习</span>
+          </div>
+        </div>
+      </div>
+      <div class="stats-today">
+        <div class="today-item">
+          <div class="today-icon fire">🔥</div>
+          <div class="today-info">
+            <span class="today-value" id="streak">0</span>
+            <span class="today-label">天连续</span>
+          </div>
+        </div>
+        <div class="today-item">
+          <div class="today-icon review">📝</div>
+          <div class="today-info">
+            <span class="today-value" id="todayReviews">0</span>
+            <span class="today-label">今日复习</span>
+          </div>
+        </div>
+        <div class="today-item">
+          <div class="today-icon target">🎯</div>
+          <div class="today-info">
+            <span class="today-value" id="todayAccuracy">0%</span>
+            <span class="today-label">正确率</span>
+          </div>
+        </div>
+      </div>
+      <div class="chart-section">
+        <div class="chart-title">近30天学习记录</div>
+        <div class="chart" id="chart"></div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="scripts/stats-dashboard.ts"></script>
+</body>
+</html>

@@ -1,0 +1,345 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: transparent;
+  font-family: -apple-system, "SF Pro Display", "Microsoft YaHei", sans-serif;
+  user-select: none;
+  overflow: hidden;
+}
+
+.review-container {
+  width: 360px;
+  min-height: 100vh;
+  background: rgba(18, 18, 28, 0.82);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  flex-shrink: 0;
+}
+
+.review-title {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255, 80, 80, 0.25);
+  color: #ff6b6b;
+}
+
+/* Views */
+.view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* Home View */
+.home-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.15s;
+}
+
+.stat-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+}
+
+.stat-value {
+  color: #e8e8f0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.home-actions {
+  padding: 16px 0;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, rgba(100, 140, 255, 0.2), rgba(130, 100, 255, 0.2));
+  border: 1px solid rgba(100, 140, 255, 0.25);
+  color: #a0b4ff;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px 20px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(100, 140, 255, 0.3), rgba(130, 100, 255, 0.3));
+  border-color: rgba(100, 140, 255, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(100, 140, 255, 0.15);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.home-config {
+  margin-top: auto;
+  padding: 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.config-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.config-row label {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+}
+
+.config-row select {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e8e8f0;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.config-row select:hover {
+  border-color: rgba(100, 140, 255, 0.3);
+}
+
+.config-row select option {
+  background: #1a1a2e;
+  color: #e8e8f0;
+}
+
+/* Card View */
+.card-progress {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+
+.card-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 12px;
+}
+
+.word-main {
+  color: #e8e8f0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 4px 12px;
+  border-radius: 8px;
+}
+
+.word-main:hover {
+  color: #a0b4ff;
+  background: rgba(100, 140, 255, 0.08);
+}
+
+.word-phonetic {
+  color: rgba(160, 180, 255, 0.6);
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+.answer-reveal {
+  animation: fadeIn 0.25s ease;
+}
+
+.word-trans {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+.word-sentence {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+.card-actions {
+  padding: 18px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-show {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  padding: 10px 44px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-show:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-forgot,
+.btn-fuzzy,
+.btn-remembered {
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex: 1;
+}
+
+.btn-forgot {
+  background: rgba(255, 80, 80, 0.12);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 80, 80, 0.2);
+}
+
+.btn-forgot:hover {
+  background: rgba(255, 80, 80, 0.25);
+  border-color: rgba(255, 80, 80, 0.4);
+}
+
+.btn-fuzzy {
+  background: rgba(255, 180, 50, 0.12);
+  color: #ffb432;
+  border: 1px solid rgba(255, 180, 50, 0.2);
+}
+
+.btn-fuzzy:hover {
+  background: rgba(255, 180, 50, 0.25);
+  border-color: rgba(255, 180, 50, 0.4);
+}
+
+.btn-remembered {
+  background: rgba(80, 200, 120, 0.12);
+  color: #50c878;
+  border: 1px solid rgba(80, 200, 120, 0.2);
+}
+
+.btn-remembered:hover {
+  background: rgba(80, 200, 120, 0.25);
+  border-color: rgba(80, 200, 120, 0.4);
+}
+
+/* Done View */
+.done-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.done-text {
+  color: #e8e8f0;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.done-stats {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 14px;
+  margin-bottom: 28px;
+  text-align: center;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

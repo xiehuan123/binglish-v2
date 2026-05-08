@@ -109,8 +109,8 @@ pub async fn update_wallpaper(app: AppHandle) -> Result<String, String> {
     let (screen_w, screen_h) = get_screen_size();
 
     // 先从词库选词（在 await 之前完成，避免生命周期问题）
-    let word_db: tauri::State<'_, WordDb> = app.state();
-    let entry = word_db.random_word().ok_or("Word database is empty")?.clone();
+    let word_db: WordDb = app.state::<WordDb>().inner().clone();
+    let entry = word_db.lock().random_word().ok_or("Word database is empty")?.clone();
     drop(word_db);
 
     let state: AppState = app.state::<AppState>().inner().clone();
@@ -254,10 +254,11 @@ pub struct WordPageItem {
 #[tauri::command]
 pub fn get_word_page(word_db: tauri::State<'_, WordDb>, page: usize, page_size: usize) -> WordPage {
     let size = if page_size == 0 { 5 } else { page_size };
-    let total = word_db.total_words();
+    let db = word_db.lock();
+    let total = db.total_words();
     let total_pages = (total + size - 1) / size;
     let p = page.min(total_pages.saturating_sub(1));
-    let entries = word_db.get_page(p, size);
+    let entries = db.get_page(p, size);
     let words = entries.into_iter().map(|e| {
         let trans_short: String = e.trans
             .split(';')

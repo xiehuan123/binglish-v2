@@ -1,5 +1,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { listen } from "@tauri-apps/api/event";
 import { load } from "@tauri-apps/plugin-store";
+import { invoke } from "@tauri-apps/api/core";
 import { getWordPage } from "./shared/invoke";
 
 const PAGE_SIZE = 5;
@@ -52,6 +54,7 @@ async function loadPage(page: number) {
       <div class="word-top">
         <span class="word-name">${w.word}</span>
         <span class="word-phonetic">${ph}</span>
+        <button class="add-learn-btn" data-word="${w.word}" title="加入学习">+</button>
       </div>
       <div class="word-trans">${trans}</div>
     </div>`;
@@ -59,9 +62,29 @@ async function loadPage(page: number) {
 
   list.querySelectorAll(".word-item").forEach(item => {
     item.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains("add-learn-btn")) return;
       e.stopPropagation();
       const word = (item as HTMLElement).dataset.word;
       if (word) playWord(word);
+    });
+  });
+
+  list.querySelectorAll(".add-learn-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const word = (btn as HTMLElement).dataset.word;
+      if (word) {
+        const added = await invoke<boolean>("add_word_to_learning", { word });
+        const el = btn as HTMLElement;
+        if (added) {
+          el.textContent = "✓";
+          el.classList.add("added");
+        } else {
+          el.textContent = "✓";
+          el.classList.add("added");
+        }
+      }
     });
   });
 }
@@ -90,3 +113,7 @@ document.getElementById("closeBtn")!.addEventListener("click", (e) => {
 });
 
 loadSavedPage().then(p => loadPage(p));
+
+listen("book-changed", () => {
+  loadPage(0);
+});

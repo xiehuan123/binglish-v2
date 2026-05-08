@@ -1,7 +1,7 @@
 {
   "identifier": "binglish-default",
   "description": "Capability for the main window",
-  "windows": ["main", "rest-overlay", "history-overlay", "game-overlay", "word-sticky"],
+  "windows": ["main", "rest-overlay", "history-overlay", "game-overlay", "word-sticky", "review-overlay", "stats-overlay"],
   "permissions": [
     "core:default",
     "core:window:default",
@@ -9,6 +9,9 @@
     "core:window:allow-close",
     "core:window:allow-set-focus",
     "core:window:allow-start-dragging",
+    "core:event:default",
+    "core:event:allow-emit",
+    "core:event:allow-listen",
     "shell:allow-open",
     "dialog:default",
     "store:default",
